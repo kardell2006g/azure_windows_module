@@ -4,33 +4,32 @@ provider "azurerm" {
 
 variable location {}
 variable resource_group_name {}
+variable subnet_name {}
+variable subnet_RG {}
+variable vnet_name {}
+variable key_vault_name {}
+variable key_vault_cert {}
+variable key_vault_RG {}
 
-/*data "azurerm_virtual_network" "example" {
-  name                = 
-  resource_group_name = var.resource_group_name
-}
-
-output "virtual_network_id" {
-  value = data.azurerm_virtual_network.example.id
-}
-*/
+data "azurerm_subnet" "example" {
+  name                 = "subnet1"
+  resource_group_name  = "AK-RG"
+  virtual_network_name = "AK-example-network"
+ }
 
 resource "azurerm_resource_group" "example" {
   name     = var.resource_group_name
   location = var.location
 }
 
-resource "azurerm_key_vault" "example" {
-  name                = "examplekeyvault-ak"
-  resource_group_name = azurerm_resource_group.example.name
-  location            = var.location
-  sku_name            = "standard"
-  tenant_id           = "0e3e2e88-8caf-41ca-b4da-e3b33b6c52ec"
-}
+data "azurerm_key_vault" "example" {
+  name                = "akmodule5189221693"
+  resource_group_name = "ak-module"
+ }
 
 data "azurerm_key_vault_certificate" "example" {
   name         = "example-kv-cert"
-  key_vault_id = azurerm_key_vault.example.id
+  key_vault_id = data.azurerm_key_vault.example.id
 }
 
 
@@ -50,11 +49,12 @@ module "windowsservers" {
   vm_os_offer                   = "WindowsServer"
   vm_os_sku                     = "2012-R2-Datacenter"
   vm_size                       = "Standard_DS2_V2"
-  vnet_subnet_id                = module.network.vnet_subnets[0]
+  #vnet_subnet_id                = module.network.vnet_subnets[0]
+  vnet_subnet_id                = data.azurerm_subnet.example.id
   enable_accelerated_networking = true
   license_type                  = "Windows_Client"
   identity_type                 = "SystemAssigned" // can be empty, SystemAssigned or UserAssigned
-  vm_os_simple                  = "WindowsServer"
+  #vm_os_simple                  = "WindowsServer"
 
   extra_disks = [
     {
@@ -68,7 +68,7 @@ module "windowsservers" {
   ]
 
   os_profile_secrets = [{
-    source_vault_id   = azurerm_key_vault.example.id
+    source_vault_id   = data.azurerm_key_vault.example.id
     certificate_url   = data.azurerm_key_vault_certificate.example.secret_id
     certificate_store = "My"
   }]
@@ -78,7 +78,7 @@ module "windowsservers" {
   ]
 }
 
-module "network" {
+/*module "network" {
   source              = "Azure/network/azurerm"
   resource_group_name = azurerm_resource_group.example.name
   subnet_prefixes     = ["10.0.1.0/24"]
@@ -88,6 +88,7 @@ module "network" {
     azurerm_resource_group.example
   ]
 }
+*/
 
 output "windows_vm_public_name" {
   value = module.windowsservers.public_ip_dns_name
