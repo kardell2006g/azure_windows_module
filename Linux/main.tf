@@ -25,7 +25,7 @@ resource "azurerm_resource_group" "example" {
 }
 
 module "linuxservers" {
-  source                           = "Azure/compute/azurerm"
+  source                           = "app.terraform.io/GAIG/linuxvm-cis/azurerm"
   resource_group_name              = azurerm_resource_group.example.name
   vm_hostname                      = "mylinuxvm"
   nb_public_ip                     = 0
